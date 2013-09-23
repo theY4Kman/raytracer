@@ -39,29 +39,23 @@ class Vector(object):
         self.y = y
         self.z = z
 
+    def __add__(self, other):
+        return Vector((other.x + self.x), (other.y + self.y), (other.z + self.z))
+
+    def __sub__(self, other):
+        return other + (-self)
+
+    def __neg__(self):
+        return Vector(-self.x, -self.y, -self.z)
+
+    def __len__(self):
+        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
+
+    def __div__(self, scalar):
+        return Vector(self.x / scalar, self.y / scalar, self.z / scalar)
+
     def normalize(self):
-        """
-        I don't really know what "normalize" means in the mathematical sense.
-        What little I've gathered and what I could see as being useful is
-        changing each x, y, and z to be ratios of 1. And the way that seems
-        obvious to do that is to find the maximum of the three and divide them
-        all by it.
-
-        The internet says that's wholly wrong, though I do not fully understand
-        why. What sticks out to me as bad (not very useful) in my solution is
-        that one component would always end up as 1, and so it seems two
-        different vectors, in wholly different directions, could end up seeming
-        very similar with my method.
-
-        Boy, I'm really coming to the point where I just want to trust the
-        maths and get on with it, BUT THAT'S QUITTER TALK! I WILL WIN THIS! I
-        WILL UNDERSTAND THESE MATHS AND STILL KEEP MY OWN METHOD OF UNDER-
-        STANDING. I WILL NOT LET THEM WIN!
-
-        I actually have no idea why I wrote this method. It just seemed like
-        the thing you put on a Vector class. Well, fuck, I'm already not
-        solving my problem, and doing things which look like solving it. Pshhh.
-        """
+        return self / len(self)
 
 
 class Sphere(Vector):
@@ -75,10 +69,53 @@ class Sphere(Vector):
                          (vector.z - self.z)**2) < self.radius
 
 
+class Ray(object):
+    """
+    I'm making this a point with a direction, and iterating over it adds the
+    `direction` vector. I've really muddled what Vector and Point means, but
+    I really, really don't care at this point. I'm aware of my lack of
+    distinction, but FUCK IT. They're both three floats, and the ease at which
+    they're represented as the same data in programming-language-speak makes
+    their utility non-obvious, so fuck it. I'm doing this experiment for
+    myself, anyway... I don't know why I keep forgetting that.
+
+    I'm totally gonna end up a bitter hermit.
+    """
+
+    def __init__(self, point, direction):
+        self.point = point
+        self.direction = direction
+
+    def __iter__(self):
+        return RayIter(self)
+
+
+class RayIter(object):
+    def __init__(self, ray):
+        self.ray = ray
+
+    def next(self):
+        self.ray.point += self.ray.direction
+        return self.ray.point
+
+
+class World(object):
+    def __init__(self, width, depth, height):
+        self.width = width
+        self.depth = depth
+        self.height = height
+
+    def __contains__(self, point):
+        return (0 < point.x < self.width and
+                0 < point.y < self.depth and
+                0 < point.z < self.height)
+
+
 if __name__ == '__main__':
     # The world space is 200x200. (0, 0) is bottom-left of the screen, depth
     # closer to 0 being closer to the screen.
     world_size = (200, 200, 200)
+    world = World(*world_size)
 
     # Top-left quadrant (roughly), just past center of world (in depth), 20 rad
     light = Sphere(40, 170, 40, 20)
@@ -92,14 +129,31 @@ if __name__ == '__main__':
     RAY_OBJ_LIGHT = pygame.Color('MintCream')  # Oh, yeah, my kind of colour name
     RAY_OBJECT = pygame.Color('DarkGray')
 
+    def trace_object(ray, object):
+        for point in ray:
+            if point not in world:
+                return None
+            if point in object:
+                return point
+        else:
+            return None
+
     def trace_ray(x, y, z):
         v = Vector(x, y, z)
-        while v.y < world_size[1]:
-            if v in object:
-                return RAY_OBJECT
-            elif v in light:
+        hit = trace_object(Ray(v, Vector(0, 1, 0)), object)
+        if hit:
+            # I don't know how to find the vector between the point hit and the
+            # light source. I do want the normalized (i.e. length=1) vector.
+            # Shit, I'm really out of my element here. I'm searching the nets.
+            # I'm hitting the maths wall hard, to the point where I'm going to
+            # have to suck up all my pride and learn some real maths, because
+            # it will save me lots of time. Fuck. Fuck. FUCK. :(      :'(
+            #
+            # Alright, gonna try just subtracting
+            if trace_object(Ray(hit, (hit - light).normalize()), light):
                 return RAY_OBJ_LIGHT
-            v.y += 1.0
+            else:
+                return RAY_OBJECT
         else:
             return RAY_NOTHING
 
