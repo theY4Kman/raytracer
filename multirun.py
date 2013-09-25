@@ -16,24 +16,8 @@ def run_raytracer(wait, n):
     x = col * 100
 
     env['SDL_VIDEO_WINDOW_POS'] = '{0},{1}'.format(x, y)
-
-    while True:
-        active_window_id = subprocess.check_output(['xdotool', 'getwindowfocus'])
-        print active_window_id
-        proc = subprocess.Popen(['python', 'raytracer.py'], env=env,
-                                stderr=subprocess.PIPE, stdout=None)
-        while True:
-            errline = proc.stderr.readline()
-            if errline == '' and proc.poll() is not None:
-                break
-            elif errline.strip() == 'STARTED':
-                subprocess.call(['wmctrl', '-i', '-a', active_window_id])
-            elif errline.strip() == 'FINISHED':
-                break
-
-        time.sleep(wait)
-        if proc.returncode is None:
-            proc.terminate()
+    FNULL = open(os.devnull, 'w')
+    subprocess.call(['python', 'raytracer.py', str(wait)], env=env, stdout=FNULL)
 
 
 def run_multi_raytracers(n=20, stagger=5, wait=10):
@@ -50,4 +34,4 @@ def run_multi_raytracers(n=20, stagger=5, wait=10):
 
 
 if __name__ == '__main__':
-    run_multi_raytracers(stagger=3)
+    run_multi_raytracers(stagger=1)

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 My goal in writing this was, firstly, to have a side project, because I was
 getting a little antsy, which usually means I've been bored as shit, but have
@@ -29,6 +30,7 @@ an object and no light source will be gray.
 import math
 import pygame
 import sys
+import time
 
 pygame.init()
 
@@ -55,7 +57,7 @@ class Vector(object):
         return Vector(self.x / scalar, self.y / scalar, self.z / scalar)
 
     def __str__(self):
-        return '(%.03f, %.03f, %0.3f)' % (self.x, self.y, self.z)
+        return '(% 3.03f, % 3.03f, % 3.03f)' % (self.x, self.y, self.z)
 
     def normalize(self):
         return self / len(self)
@@ -127,19 +129,24 @@ class World(object):
 
 
 if __name__ == '__main__':
+    restart = False
+    wait = 0
+    if sys.argv[1:]:
+        restart = True
+        wait = int(sys.argv[1])
+
     # The world space is 200x200. (0, 0) is bottom-left of the screen, depth
     # closer to 0 being closer to the screen.
     world_size = (200, 200, 200)
     world = World(*world_size)
 
     # Top-left quadrant (roughly), just past center of world (in depth), 20 rad
-    light = Sphere(40, 170, 40, 20)
+    light = Sphere(40, 100, 40, 20)
 
     # Dead-center, 4 radius
     object = Sphere(100, 100, 100, 40)
 
     w = pygame.display.set_mode((100, 100), pygame.NOFRAME)
-    print >> sys.stderr, 'STARTED'
 
     RAY_NOTHING = pygame.Color('orange')
     RAY_OBJ_LIGHT = pygame.Color('MintCream')  # Oh, yeah, my kind of colour name
@@ -166,7 +173,7 @@ if __name__ == '__main__':
             # it will save me lots of time. Fuck. Fuck. FUCK. :(      :'(
             #
             # Alright, gonna try just subtracting
-            print (hit - light), (hit - light).normalize()
+            print hit, '-', hit, (hit - light), (hit - light).normalize(), 'norm'
             if trace_object(Ray(hit, (hit - light).normalize()), light):
                 return RAY_OBJ_LIGHT
             else:
@@ -179,23 +186,30 @@ if __name__ == '__main__':
     WORLD_SIZE = 200
     WORLD_VIEW = 100
     VIEW_START = 50
-    for z in xrange(VIEW_START, world_size[2] - VIEW_START):
-        for x in xrange(VIEW_START, world_size[0] - VIEW_START):
-            color = trace_ray(x, 0, z)
-            #print x, z, color#####################
-            w.set_at((x - VIEW_START, z - VIEW_START), color)
-            pygame.display.flip()
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit(0)
-
-    print >> sys.stderr, 'FINISHED'
-
-    # Boilerplate, just wanna get shit running
     while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit(0)
-            else:
-                print event
+        print >> sys.stderr, 'STARTED'
+        w.fill(pygame.Color('black'))
+        pygame.display.flip()
+
+        for z in xrange(VIEW_START, world_size[2] - VIEW_START):
+            for x in xrange(VIEW_START, world_size[0] - VIEW_START):
+                color = trace_ray(x, 0, z)
+                #print x, z, color#####################
+                w.set_at((x - VIEW_START, z - VIEW_START), color)
+                pygame.display.flip()
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        sys.exit(0)
+
+        print >> sys.stderr, 'FINISHED'
+
+        if restart:
+            time.sleep(wait)
+        else:
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        sys.exit(0)
+
