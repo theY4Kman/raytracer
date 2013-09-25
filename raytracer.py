@@ -54,6 +54,9 @@ class Vector(object):
     def __div__(self, scalar):
         return Vector(self.x / scalar, self.y / scalar, self.z / scalar)
 
+    def __str__(self):
+        return '(%.03f, %.03f, %0.3f)' % (self.x, self.y, self.z)
+
     def normalize(self):
         return self / len(self)
 
@@ -63,7 +66,19 @@ class Sphere(Vector):
         super(Sphere, self).__init__(x, y, z)
         self.radius = r
 
+    def in_bounding_box(self, vector):
+        if ((self.x - self.radius) < vector.x < (self.x + self.radius) and
+            (self.y - self.radius) < vector.y < (self.y + self.radius) and
+            (self.z - self.radius) < vector.z < (self.z + self.radius)):
+            return True
+        else:
+            return False
+
     def __contains__(self, vector):
+        # Bounding box
+        if not self.in_bounding_box(vector):
+            return False
+
         return math.sqrt((vector.x - self.x)**2 +
                          (vector.y - self.y)**2 +
                          (vector.z - self.z)**2) < self.radius
@@ -123,7 +138,8 @@ if __name__ == '__main__':
     # Dead-center, 4 radius
     object = Sphere(100, 100, 100, 40)
 
-    w = pygame.display.set_mode((100, 100))
+    w = pygame.display.set_mode((100, 100), pygame.NOFRAME)
+    print >> sys.stderr, 'STARTED'
 
     RAY_NOTHING = pygame.Color('orange')
     RAY_OBJ_LIGHT = pygame.Color('MintCream')  # Oh, yeah, my kind of colour name
@@ -150,6 +166,7 @@ if __name__ == '__main__':
             # it will save me lots of time. Fuck. Fuck. FUCK. :(      :'(
             #
             # Alright, gonna try just subtracting
+            print (hit - light), (hit - light).normalize()
             if trace_object(Ray(hit, (hit - light).normalize()), light):
                 return RAY_OBJ_LIGHT
             else:
@@ -172,8 +189,8 @@ if __name__ == '__main__':
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit(0)
-                else:
-                    print event
+
+    print >> sys.stderr, 'FINISHED'
 
     # Boilerplate, just wanna get shit running
     while True:
